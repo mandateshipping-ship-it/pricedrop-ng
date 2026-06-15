@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return request.auth.token.admin == true; // Set via custom claims
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Products (public read)
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Listings
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.shopId) || isAdmin();
+    }
+
+    // Watchlists (private to user)
+    match /watchlists/{watchlistId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // Notifications (private to user)
+    match /notifications/{notificationId} {
+      allow read, update: if isOwner(resource.data.userId);
+      allow create: if isAdmin();
+    }
+
+    // Technicians
+    match /technicians/{technicianId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.id) || isAdmin();
+    }
+
+    // Services offered by technicians
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isOwner(resource.data.technicianId) || isAdmin();
+    }
+
+    // Repair Requests
+    match /repairRequests/{requestId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || 
+        (resource.data.status == 'pending' && isOwner(resource.data.userId));
+    }
+
+    // Reviews
+    match /technicianReviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // User Devices (private)
+    match /userDevices/{deviceId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    // Referrals & Rewards
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+    }
+
+    // Admin-only collections
+    match /adminLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
