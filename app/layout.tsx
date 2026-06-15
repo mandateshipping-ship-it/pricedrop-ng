@@ -3,17 +3,17 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'PriceDrop NG',
-  description: "Nigeria's leading market intelligence and marketplace platform",
+  description: "Nigeria's leading market intelligence platform",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body className="bg-[#0F172A] text-white">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
